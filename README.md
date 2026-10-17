@@ -1,6 +1,10 @@
 <!-- Scope: project-local -->
 # NotebookLM Concurrency Unlocker (Chrome Extension)
 
+[![Latest Release](https://img.shields.io/github/v/release/vecyang1/notebooklm-concurrency-unlocker)](https://github.com/vecyang1/notebooklm-concurrency-unlocker/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Manifest V3](https://img.shields.io/badge/Chrome_Extension-Manifest_V3-success.svg)](manifest.json)
+
 **[English](README.md)** | [中文文档](README.zh-CN.md)
 
 <p align="center">
