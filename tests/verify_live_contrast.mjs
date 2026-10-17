@@ -2,13 +2,21 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const projectRoot = typeof __PROJECT_ROOT__ !== 'undefined' 
-  ? __PROJECT_ROOT__ 
-  : (process.cwd().includes('26.10.16-notebooklm-concurrency-unlocker') 
-      ? process.cwd() 
-      : path.resolve(__dirname || '.', '..'));
+import fsSync from 'node:fs';
+
+import os from 'node:os';
+
+const candidateRoots = [
+  typeof __PROJECT_ROOT__ !== 'undefined' ? __PROJECT_ROOT__ : null,
+  process.env.PROJECT_ROOT,
+  process.cwd(),
+  path.resolve(process.cwd(), '26.10.16-notebooklm-concurrency-unlocker'),
+  path.join(process.env.HOME || os.homedir() || '', 'Documents/A-coding/26.10.16-notebooklm-concurrency-unlocker')
+].filter(Boolean);
+
+const projectRoot = candidateRoots.find(c => {
+  try { return fsSync.existsSync(path.join(c, 'styles.css')); } catch (_) { return false; }
+}) || process.cwd();
 
 const stylesCss = await fs.readFile(path.join(projectRoot, 'styles.css'), 'utf-8');
 const themeJs = await fs.readFile(path.join(projectRoot, 'lib', 'theme.js'), 'utf-8');
@@ -189,9 +197,19 @@ await workerPool.dispatch({ query: "认知拓扑推演", sources: 9 });</code></
   testTurn.scrollIntoView({ behavior: 'instant', block: 'end' });
 
   // Programmatically compute contrast ratios
-  function parseRgb(color) {
-    const m = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-    return m ? { r: parseInt(m[1]), g: parseInt(m[2]), b: parseInt(m[3]) } : { r: 255, g: 255, b: 255 };
+  function parseRgb(color, parentBg) {
+    if (!color) return { r: 255, g: 255, b: 255 };
+    const m = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+    if (!m) return { r: 255, g: 255, b: 255 };
+    let r = parseInt(m[1]), g = parseInt(m[2]), b = parseInt(m[3]);
+    const alpha = m[4] !== undefined ? parseFloat(m[4]) : 1.0;
+    if (alpha < 1.0 && parentBg) {
+      const p = parseRgb(parentBg);
+      r = Math.round(r * alpha + p.r * (1 - alpha));
+      g = Math.round(g * alpha + p.g * (1 - alpha));
+      b = Math.round(b * alpha + p.b * (1 - alpha));
+    }
+    return { r, g, b };
   }
   function getLuminance(r, g, b) {
     const a = [r, g, b].map(v => {
@@ -200,9 +218,9 @@ await workerPool.dispatch({ query: "认知拓扑推演", sources: 9 });</code></
     });
     return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
   }
-  function calcContrast(fgStr, bgStr) {
-    const fg = parseRgb(fgStr);
-    const bg = parseRgb(bgStr);
+  function calcContrast(fgStr, bgStr, parentBgStr) {
+    const bg = parseRgb(bgStr, parentBgStr);
+    const fg = parseRgb(fgStr, `rgb(${bg.r}, ${bg.g}, ${bg.b})`);
     const l1 = getLuminance(fg.r, fg.g, fg.b);
     const l2 = getLuminance(bg.r, bg.g, bg.b);
     return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
@@ -232,9 +250,9 @@ await workerPool.dispatch({ query: "认知拓扑推演", sources: 9 });</code></
   const userBubbleContrast = calcContrast(csUserText.color, csUserBubble.backgroundColor);
   const headingContrast = calcContrast(csHeading.color, csCard.backgroundColor);
   const numContrast = calcContrast(csNum.color, csCard.backgroundColor);
-  const pillContrast = calcContrast(csPill.color, csPill.backgroundColor);
-  const chipContrast = calcContrast(csChip.color, csChip.backgroundColor);
-  const badgeContrast = calcContrast(csBadge.color, csBadge.backgroundColor);
+  const pillContrast = calcContrast(csPill.color, csPill.backgroundColor, csCard.backgroundColor);
+  const chipContrast = calcContrast(csChip.color, csChip.backgroundColor, csCard.backgroundColor);
+  const badgeContrast = calcContrast(csBadge.color, csBadge.backgroundColor, csCard.backgroundColor);
 
   return {
     detectedTheme,
@@ -262,3 +280,109 @@ console.log('Capturing high-resolution viewport screenshot to:', screenshotFile)
 const pngBuffer = await page.cdp('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
 await fs.writeFile(screenshotFile, Buffer.from(pngBuffer.data, 'base64'));
 console.log('Screenshot successfully saved at:', screenshotFile);
+
+// 2. Audit Dark Mode contrast
+console.log('Switching to Dark Mode for dual-theme contrast verification...');
+const darkResult = await page.evaluate(async () => {
+  const themeMgr = window.NBTheme || new window.ThemeManager();
+  themeMgr.stopObserving();
+  themeMgr.applyTheme('dark');
+  await new Promise(r => setTimeout(r, 400));
+
+  const testTurn = document.getElementById('nb-turn-contrast-test');
+  function parseRgb(color, parentBg) {
+    if (!color) return { r: 255, g: 255, b: 255 };
+    const m = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+    if (!m) return { r: 255, g: 255, b: 255 };
+    let r = parseInt(m[1]), g = parseInt(m[2]), b = parseInt(m[3]);
+    const alpha = m[4] !== undefined ? parseFloat(m[4]) : 1.0;
+    if (alpha < 1.0 && parentBg) {
+      const p = parseRgb(parentBg);
+      r = Math.round(r * alpha + p.r * (1 - alpha));
+      g = Math.round(g * alpha + p.g * (1 - alpha));
+      b = Math.round(b * alpha + p.b * (1 - alpha));
+    }
+    return { r, g, b };
+  }
+  function getLuminance(r, g, b) {
+    const a = [r, g, b].map(v => {
+      v /= 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+  }
+  function calcContrast(fgStr, bgStr, parentBgStr) {
+    const bg = parseRgb(bgStr, parentBgStr);
+    const fg = parseRgb(fgStr, `rgb(${bg.r}, ${bg.g}, ${bg.b})`);
+    const l1 = getLuminance(fg.r, fg.g, fg.b);
+    const l2 = getLuminance(bg.r, bg.g, bg.b);
+    return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+  }
+
+  const answerEl = testTurn.querySelector('.nb-answer-content');
+  const userBubbleEl = testTurn.querySelector('.nb-user-bubble');
+  const userTextEl = testTurn.querySelector('.nb-user-text');
+  const modelCardEl = testTurn.querySelector('.nb-model-card');
+  const pillEl = testTurn.querySelector('.nb-ref-pill');
+  const chipEl = testTurn.querySelector('.nb-action-chip');
+  const badgeEl = testTurn.querySelector('.nb-parallel-stream-badge');
+  const headingEl = testTurn.querySelector('.nb-answer-h');
+  const numEl = testTurn.querySelector('.nb-li-num');
+
+  const csAnswer = window.getComputedStyle(answerEl);
+  const csCard = window.getComputedStyle(modelCardEl);
+  const csUserBubble = window.getComputedStyle(userBubbleEl);
+  const csUserText = window.getComputedStyle(userTextEl);
+  const csPill = window.getComputedStyle(pillEl);
+  const csChip = window.getComputedStyle(chipEl);
+  const csBadge = window.getComputedStyle(badgeEl);
+  const csHeading = window.getComputedStyle(headingEl);
+  const csNum = window.getComputedStyle(numEl);
+
+  const answerContrast = calcContrast(csAnswer.color, csCard.backgroundColor);
+  const userBubbleContrast = calcContrast(csUserText.color, csUserBubble.backgroundColor);
+  const headingContrast = calcContrast(csHeading.color, csCard.backgroundColor);
+  const numContrast = calcContrast(csNum.color, csCard.backgroundColor);
+  const pillContrast = calcContrast(csPill.color, csPill.backgroundColor, csCard.backgroundColor);
+  const chipContrast = calcContrast(csChip.color, csChip.backgroundColor, csCard.backgroundColor);
+  const badgeContrast = calcContrast(csBadge.color, csBadge.backgroundColor, csCard.backgroundColor);
+
+  return {
+    styles: {
+      answer: { color: csAnswer.color, bg: csCard.backgroundColor, contrast: answerContrast, passesAAA: answerContrast >= 7.0 },
+      userBubble: { color: csUserText.color, bg: csUserBubble.backgroundColor, border: csUserBubble.borderColor, contrast: userBubbleContrast, passesAAA: userBubbleContrast >= 7.0 },
+      heading: { color: csHeading.color, contrast: headingContrast, passesAAA: headingContrast >= 7.0 },
+      num: { color: csNum.color, contrast: numContrast, passesAA: numContrast >= 4.5 },
+      pill: { color: csPill.color, bg: csPill.backgroundColor, contrast: pillContrast, passesAAA: pillContrast >= 7.0, passesAA: pillContrast >= 4.5 },
+      chip: { color: csChip.color, bg: csChip.backgroundColor, contrast: chipContrast, passesAAA: chipContrast >= 7.0 },
+      badge: { color: csBadge.color, bg: csBadge.backgroundColor, contrast: badgeContrast, passesAA: badgeContrast >= 4.5 }
+    }
+  };
+});
+
+console.log('Dark Mode Contrast Audit:');
+console.log(JSON.stringify(darkResult, null, 2));
+
+const darkScreenshotFile = path.join(projectRoot, 'reports', 'notebooklm_dark_mode_contrast_verified.png');
+console.log('Capturing dark mode viewport screenshot to:', darkScreenshotFile);
+const darkPngBuffer = await page.cdp('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+await fs.writeFile(darkScreenshotFile, Buffer.from(darkPngBuffer.data, 'base64'));
+console.log('Dark mode screenshot successfully saved at:', darkScreenshotFile);
+
+// 3. Restore back to original detected theme (Light Mode) and clean up test turn
+await page.evaluate(async () => {
+  const testTurn = document.getElementById('nb-turn-contrast-test');
+  if (testTurn) testTurn.remove();
+  const themeMgr = window.NBTheme || new window.ThemeManager();
+  themeMgr.applyTheme('light');
+  themeMgr.startObserving();
+});
+console.log('Restored live tab to Light Mode and cleaned up test turn.');
+
+const allLightPass = Object.values(result.styles).every(s => (s.passesAAA || s.passesAA));
+const allDarkPass = Object.values(darkResult.styles).every(s => (s.passesAAA || s.passesAA));
+if (!allLightPass || !allDarkPass) {
+  console.error('Contrast audit failed!');
+  process.exit(1);
+}
+console.log('Dual-theme contrast audit 100% passed (WCAG AA/AAA certified)!');

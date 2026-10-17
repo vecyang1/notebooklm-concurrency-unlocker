@@ -28,26 +28,43 @@ async function main() {
   const storageJsPath = path.join(projectRoot, 'lib', 'storage.js');
   const workerPoolJsPath = path.join(projectRoot, 'lib', 'worker_pool.js');
   const queueJsPath = path.join(projectRoot, 'lib', 'queue.js');
+  const themeJsPath = path.join(projectRoot, 'lib', 'theme.js');
   const contentJsPath = path.join(projectRoot, 'content.js');
   const stylesCssPath = path.join(projectRoot, 'styles.css');
 
   const testScript = `
 const fs = await import("node:fs/promises");
-const task = await taskSpace(91);
-const pages = await task.pages();
-const page = pages[0];
+const spaces = await listTaskSpaces();
+const targetSpace = spaces.find(s => s.recentTabTitles?.some(t => t.includes('Notebook'))) || spaces[0];
+const task = await claimTaskSpace(targetSpace.id);
 
-// 1. 同步加载仓库最新 v1.1.0 全部代码与样式到活体页面
+let page = null;
+try {
+  const pages = task.pages();
+  if (Array.isArray(pages) && pages.length > 0) page = pages[0];
+} catch (_) {}
+if (!page) {
+  const tabs = await task.tabs();
+  const notebookTab = tabs.find(t => t.url.includes('notebook.google.com') && t.active) || tabs.find(t => t.url.includes('notebook.google.com'));
+  if (notebookTab && notebookTab.page && notebookTab.page.constructor?.name === 'UnmanagedPage') {
+    page = await task.adopt(notebookTab.page, { as: 'smoke_tester' });
+  } else {
+    page = task.page('nb') || task.page('contrast_verifier') || task.userPage();
+  }
+}
+
+// 1. 同步加载仓库最新 v1.1.1 全部代码与样式到活体页面
 const parserCode = await fs.readFile("${parserJsPath}", "utf-8");
 const inpageCode = await fs.readFile("${inpageJsPath}", "utf-8");
 const i18nCode = await fs.readFile("${i18nJsPath}", "utf-8");
 const storageCode = await fs.readFile("${storageJsPath}", "utf-8");
 const workerPoolCode = await fs.readFile("${workerPoolJsPath}", "utf-8");
 const queueCode = await fs.readFile("${queueJsPath}", "utf-8");
+const themeCode = await fs.readFile("${themeJsPath}", "utf-8");
 const contentCode = await fs.readFile("${contentJsPath}", "utf-8");
 const stylesCode = await fs.readFile("${stylesCssPath}", "utf-8");
 
-await page.evaluate(({ parserCode, inpageCode, i18nCode, storageCode, workerPoolCode, queueCode, contentCode, stylesCode }) => {
+await page.evaluate(({ parserCode, inpageCode, i18nCode, storageCode, workerPoolCode, queueCode, themeCode, contentCode, stylesCode }) => {
   window.__NB_CONCURRENCY_FORCE_RELOAD__ = true;
 
   // 注入样式
@@ -60,6 +77,7 @@ await page.evaluate(({ parserCode, inpageCode, i18nCode, storageCode, workerPool
   styleEl.textContent = stylesCode;
 
   // 注入各模块
+  eval(themeCode);
   eval(parserCode);
   eval(inpageCode);
   eval(i18nCode);
@@ -67,7 +85,7 @@ await page.evaluate(({ parserCode, inpageCode, i18nCode, storageCode, workerPool
   eval(workerPoolCode);
   eval(queueCode);
   eval(contentCode);
-}, { parserCode, inpageCode, i18nCode, storageCode, workerPoolCode, queueCode, contentCode, stylesCode });
+}, { parserCode, inpageCode, i18nCode, storageCode, workerPoolCode, queueCode, themeCode, contentCode, stylesCode });
 
 // 等待异步设置加载与生命周期初始化
 await new Promise(r => setTimeout(r, 300));

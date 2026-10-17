@@ -36,12 +36,42 @@ function runThemeTests() {
   const lightChipContrast = ThemeManager.getContrastRatio('#1e293b', '#f8fafc');
   assert(lightChipContrast >= 7.0, `浅色模式操作按钮对比度应满足 WCAG AAA (>= 7:1)，实际: ${lightChipContrast.toFixed(2)}`);
 
+  const lightBadgeContrast = ThemeManager.getContrastRatio('#075985', '#e0f2fe');
+  assert(lightBadgeContrast >= 4.5, `浅色模式并发徽标对比度应满足 WCAG AA (>= 4.5:1)，实际: ${lightBadgeContrast.toFixed(2)}`);
+
+  const lightTimingContrast = ThemeManager.getContrastRatio('#475569', '#ffffff');
+  assert(lightTimingContrast >= 7.0, `浅色模式耗时提示对比度应满足 WCAG AAA (>= 7:1)，实际: ${lightTimingContrast.toFixed(2)}`);
+
+  const lightStatusGenContrast = ThemeManager.getContrastRatio('#0369a1', '#ffffff');
+  assert(lightStatusGenContrast >= 4.5, `浅色模式生成中状态对比度应满足 WCAG AA (>= 4.5:1)，实际: ${lightStatusGenContrast.toFixed(2)}`);
+
+  const lightStatusCompContrast = ThemeManager.getContrastRatio('#15803d', '#ffffff');
+  assert(lightStatusCompContrast >= 4.5, `浅色模式完成状态对比度应满足 WCAG AA (>= 4.5:1)，实际: ${lightStatusCompContrast.toFixed(2)}`);
+
   // 深色模式关键对比度校验 (Dark Mode Invariants)
   const darkAnswerContrast = ThemeManager.getContrastRatio('#f8fafc', '#1e293b');
   assert(darkAnswerContrast >= 7.0, `深色模式回答正文对比度应满足 WCAG AAA (>= 7:1)，实际: ${darkAnswerContrast.toFixed(2)}`);
 
   const darkUserBubbleContrast = ThemeManager.getContrastRatio('#f8fafc', '#26262b');
   assert(darkUserBubbleContrast >= 7.0, `深色模式用户气泡文字对比度应满足 WCAG AAA (>= 7:1)，实际: ${darkUserBubbleContrast.toFixed(2)}`);
+
+  const darkCitationContrast = ThemeManager.getContrastRatio('#e2e8f0', '#1e293b');
+  assert(darkCitationContrast >= 7.0, `深色模式引用胶囊对比度应满足 WCAG AAA (>= 7:1)，实际: ${darkCitationContrast.toFixed(2)}`);
+
+  const darkChipContrast = ThemeManager.getContrastRatio('#e2e8f0', '#1e293b');
+  assert(darkChipContrast >= 7.0, `深色模式操作按钮对比度应满足 WCAG AAA (>= 7:1)，实际: ${darkChipContrast.toFixed(2)}`);
+
+  const darkBadgeContrast = ThemeManager.getContrastRatio('#7dd3fc', '#1e293b');
+  assert(darkBadgeContrast >= 7.0, `深色模式并发徽标对比度应满足 WCAG AAA (>= 7:1)，实际: ${darkBadgeContrast.toFixed(2)}`);
+
+  const darkTimingContrast = ThemeManager.getContrastRatio('#94a3b8', '#1e293b');
+  assert(darkTimingContrast >= 4.5, `深色模式耗时提示对比度应满足 WCAG AA (>= 4.5:1)，实际: ${darkTimingContrast.toFixed(2)}`);
+
+  const darkStatusGenContrast = ThemeManager.getContrastRatio('#38bdf8', '#1e293b');
+  assert(darkStatusGenContrast >= 4.5, `深色模式生成中状态对比度应满足 WCAG AA (>= 4.5:1)，实际: ${darkStatusGenContrast.toFixed(2)}`);
+
+  const darkStatusCompContrast = ThemeManager.getContrastRatio('#4ade80', '#1e293b');
+  assert(darkStatusCompContrast >= 7.0, `深色模式完成状态对比度应满足 WCAG AAA (>= 7:1)，实际: ${darkStatusCompContrast.toFixed(2)}`);
 
   console.log('  ✓ 通过: 全部深浅色调方案均严格超越 WCAG AA/AAA 对比度红线');
 
