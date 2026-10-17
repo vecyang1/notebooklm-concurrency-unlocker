@@ -1,0 +1,25 @@
+# Dependency and build artifacts
+node_modules/
+dist/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS and Environment
+.DS_Store
+.env*
+!.env.example
+
+# Internal AI agent context files (not for public release)
+VAULT.md
+vault/
+progress.md
+task_plan.md
+handoff.md
+decisions.md
+FILE_MAP_INDEX.md
+operations/
+CLAUDE.md
+GEMINI.md
+AGENTS.md

@@ -1,0 +1,10 @@
+{
+  "extensionName": {
+    "message": "NotebookLM Concurrency Unlocker",
+    "description": "The title of the extension"
+  },
+  "extensionDescription": {
+    "message": "Unlock Google NotebookLM single-query limits with 1-5 parallel Q&A streams and native input queueing.",
+    "description": "The description of the extension"
+  }
+}

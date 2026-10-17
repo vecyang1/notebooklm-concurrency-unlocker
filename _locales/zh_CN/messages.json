@@ -1,0 +1,10 @@
+{
+  "extensionName": {
+    "message": "NotebookLM 并发提问解锁器",
+    "description": "扩展名称"
+  },
+  "extensionDescription": {
+    "message": "解锁 Google NotebookLM 单题提问限制，支持 1-5 路真正并行并发问答与原生输入智能排队。",
+    "description": "扩展功能描述"
+  }
+}
