@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2026-10-19] - 2026-10-19
 
 ### Published
-- Submitted v1.1.1 to Chrome Web Store for review (Item ID `ojocgogccjcjlcpnmniiodbdbnjdcpdn`, Publisher `Vec Yang`, Account `developer@example.com`).
+- Submitted v1.1.1 to Chrome Web Store for review (Item ID `ojocgogccjcjlcpnmniiodbdbnjdcpdn`, Publisher `Vec Yang``developer@example.com`).
 - Generated complete Chrome Web Store asset suite (128x128 store icon, 3 high-res 1280x800 screenshots, 440x280 small promo tile, 1400x560 marquee promo tile) with strict zero-alpha compliance.
 - Authored [docs/PRIVACY.md](docs/PRIVACY.md) and completed permission justifications (`storage`, `activeTab`, `notebooklm.google.com`, `notebook.google.com`) and data certifications.
 - Added deterministic runtime packaging script `scripts/package-extension.js` and automated CWS asset generator `scripts/generate-cws-assets.js`.
